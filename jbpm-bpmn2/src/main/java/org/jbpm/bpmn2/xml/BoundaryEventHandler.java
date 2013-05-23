@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.drools.compiler.compiler.xml.XmlDumper;
 import org.drools.core.xml.ExtensibleXmlParser;
+import org.jbpm.bpmn2.core.Definitions;
 import org.jbpm.bpmn2.core.Error;
 import org.jbpm.bpmn2.core.Escalation;
 import org.jbpm.bpmn2.core.ItemDefinition;
