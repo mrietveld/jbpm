@@ -60,6 +60,7 @@ import org.jbpm.compiler.xml.XmlProcessReader;
 import org.jbpm.marshalling.impl.ProcessInstanceResolverStrategy;
 import org.jbpm.persistence.util.PersistenceUtil;
 import org.jbpm.process.audit.AuditLogService;
+import org.jbpm.process.ProcessBaseFactoryService;
 import org.jbpm.process.audit.AuditLoggerFactory;
 import org.jbpm.process.audit.AuditLoggerFactory.Type;
 import org.jbpm.process.audit.JPAAuditLogService;
@@ -100,6 +101,7 @@ import org.kie.api.runtime.process.NodeInstanceContainer;
 import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.internal.KnowledgeBaseFactory;
+import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderConfiguration;
 import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.io.ResourceFactory;
@@ -311,9 +313,9 @@ public abstract class JbpmBpmn2TestCase extends AbstractBaseTest {
         Resource[] resources = new Resource[process.length];
         for (int i = 0; i < process.length; ++i) {
             String p = process[i];
-            resources[i] = (ResourceFactory.newClassPathResource(p));
+            resources.addAll(buildAndDumpBPMN2Process(process[i]));
         }
-        return createKnowledgeBaseFromResources(resources);
+        return createKnowledgeBaseFromResources(resources.toArray(new Resource[resources.size()]));
     }
     
     // Important to test this since persistence relies on this
