@@ -316,7 +316,6 @@ public class ProcessHandler extends BaseAbstractHandler implements Handler {
                 String targetRef = connection.getTargetRef();
                 Node target = findNodeByIdOrUniqueIdInMetadata(nodeContainer, targetRef, "Could not find target node for connection:" + targetRef);
 
-				
 				Connection result = new ConnectionImpl(
 					source, NodeImpl.CONNECTION_DEFAULT_TYPE, 
 					target, NodeImpl.CONNECTION_DEFAULT_TYPE);
@@ -375,6 +374,212 @@ public class ProcessHandler extends BaseAbstractHandler implements Handler {
                 }
             }
         }
+    
+    }
+
+    private static void linkBoundaryEscalationEvent(NodeContainer nodeContainer, Node node, String attachedTo, Node attachedNode) {
+        boolean cancelActivity = (Boolean) node.getMetaData().get("CancelActivity");
+        String escalationCode = (String) node.getMetaData().get("EscalationEvent");
+
+        ContextContainer compositeNode = (ContextContainer) attachedNode;
+                        ExceptionScope exceptionScope = (ExceptionScope) 
+                            compositeNode.getDefaultContext(ExceptionScope.EXCEPTION_SCOPE);
+        if (exceptionScope == null) {
+            exceptionScope = new ExceptionScope();
+            compositeNode.addContext(exceptionScope);
+            compositeNode.setDefaultContext(exceptionScope);
+        }
+
+        ActionExceptionHandler exceptionHandler = new ActionExceptionHandler();
+        DroolsConsequenceAction action = null;
+
+        if (attachedNode instanceof CompositeContextNode) {
+            action = new DroolsConsequenceAction("java",
+                     (cancelActivity ? "((org.jbpm.workflow.instance.NodeInstance) kcontext.getNodeInstance()).cancel();" : "") +
+                     "kcontext.getProcessInstance().signalEvent(\"Escalation-" + attachedTo + "-" + escalationCode + "\", null);");
+        } else {
+            long attachedToNodeId = attachedNode.getId();
+
+
+            action = new DroolsConsequenceAction("java", 
+                    (cancelActivity ? "org.kie.api.runtime.process.WorkflowProcessInstance pi = (org.kie.api.runtime.process.WorkflowProcessInstance) kcontext.getProcessInstance();"+
+                    "long nodeInstanceId = -1;"+
+                    "for (org.kie.api.runtime.process.NodeInstance nodeInstance : pi.getNodeInstances()) {"+
+                    "   if (" +attachedToNodeId +" == nodeInstance.getNodeId()) {"+
+                    "       nodeInstanceId = nodeInstance.getId();"+
+                    "       break;"+
+                    "   }"+
+                    "}"+
+                    "    ((org.jbpm.workflow.instance.NodeInstance)((org.jbpm.workflow.instance.NodeInstanceContainer) context.getProcessInstance()).getNodeInstance(nodeInstanceId)).cancel();"+
+                    "kcontext.getProcessInstance().signalEvent(\"Escalation-" + attachedTo + "-" + escalationCode + "\", null);" 
+                    : "kcontext.getProcessInstance().signalEvent(\"Escalation-" + attachedTo + "-" + escalationCode + "\", null);"));
+                            
+        }
+
+        exceptionHandler.setAction(action);
+        exceptionScope.setExceptionHandler(escalationCode, exceptionHandler);
+
+    }
+    
+    private static void linkBoundaryErrorEvent(NodeContainer nodeContainer, Node node, String attachedTo, Node attachedNode) {
+
+        ContextContainer compositeNode = (ContextContainer) attachedNode;
+        ExceptionScope exceptionScope = (ExceptionScope) compositeNode.getDefaultContext(ExceptionScope.EXCEPTION_SCOPE);
+        if (exceptionScope == null) {
+            exceptionScope = new ExceptionScope();
+            compositeNode.addContext(exceptionScope);
+            compositeNode.setDefaultContext(exceptionScope);
+        }
+        String errorCode = (String) node.getMetaData().get("ErrorEvent");
+        ActionExceptionHandler exceptionHandler = new ActionExceptionHandler();
+
+        DroolsConsequenceAction action = null;
+
+        if (attachedNode instanceof CompositeContextNode) {
+            action = new DroolsConsequenceAction("java",
+                    "((org.jbpm.workflow.instance.NodeInstance) kcontext.getNodeInstance()).cancel();" +
+                            "kcontext.getProcessInstance().signalEvent(\"Error-" + attachedTo + "-" + errorCode + "\", null);");
+        } else {
+            long attachedToNodeId = attachedNode.getId();
+
+            //@formatter:off
+            action = new DroolsConsequenceAction("java", 
+                    "org.kie.api.runtime.process.WorkflowProcessInstance pi = (org.kie.api.runtime.process.WorkflowProcessInstance) kcontext.getProcessInstance();"+
+                     "long nodeInstanceId = -1;"+
+                     "for (org.kie.api.runtime.process.NodeInstance nodeInstance : pi.getNodeInstances()) {"+
+                     "   if (" +attachedToNodeId +" == nodeInstance.getNodeId()) {"+
+                     "       nodeInstanceId = nodeInstance.getId();"+
+                     "       break;"+
+                     "   }"+
+                     "}" +
+                     "if (nodeInstanceId > -1) {((org.jbpm.workflow.instance.NodeInstance)((org.jbpm.workflow.instance.NodeInstanceContainer) kcontext.getProcessInstance()).getNodeInstance(nodeInstanceId)).cancel();}"+
+                     "kcontext.getProcessInstance().signalEvent(\"Error-" + attachedTo + "-" + errorCode + "\", null);");
+            //@formatter:on
+        }
+
+        exceptionHandler.setAction(action);
+        exceptionScope.setExceptionHandler(errorCode, exceptionHandler);
+    }
+
+    private static void linkBoundaryTimerEvent(NodeContainer nodeContainer, Node node, String attachedTo, Node attachedNode) {
+        boolean cancelActivity = (Boolean) node.getMetaData().get("CancelActivity");
+        StateBasedNode compositeNode = (StateBasedNode) attachedNode;
+        String timeDuration = (String) node.getMetaData().get("TimeDuration");
+        String timeCycle = (String) node.getMetaData().get("TimeCycle");
+        String timeDate = (String) node.getMetaData().get("TimeDate");
+        Timer timer = new Timer();
+        if (timeDuration != null) {
+            timer.setDelay(timeDuration);
+            timer.setTimeType(Timer.TIME_DURATION);
+            compositeNode.addTimer(timer, new DroolsConsequenceAction("java",
+                    (cancelActivity ? "((org.jbpm.workflow.instance.NodeInstance) kcontext.getNodeInstance()).cancel();" : "") +
+                    "kcontext.getProcessInstance().signalEvent(\"Timer-" + attachedTo + "-" + timeDuration + "\", null);"));
+        } else if (timeCycle != null) {
+            int index = timeCycle.indexOf("###");
+            if (index != -1) {
+                String period = timeCycle.substring(index + 3);
+                timeCycle = timeCycle.substring(0, index);
+                timer.setPeriod(period);
+            }
+            timer.setDelay(timeCycle);
+            timer.setTimeType(Timer.TIME_CYCLE);
+            compositeNode.addTimer(timer, new DroolsConsequenceAction("java",
+                    (cancelActivity ? "((org.jbpm.workflow.instance.NodeInstance) kcontext.getNodeInstance()).cancel();" : "") +
+                    "kcontext.getProcessInstance().signalEvent(\"Timer-" + attachedTo + "-" + timeCycle + (timer.getPeriod() == null ? "" : "###" + timer.getPeriod()) + "\", null);"));
+        } else if (timeDate != null) {
+            timer.setDate(timeDate);
+            timer.setTimeType(Timer.TIME_DATE);
+            compositeNode.addTimer(timer, new DroolsConsequenceAction("java",
+                    (cancelActivity ? "((org.jbpm.workflow.instance.NodeInstance) kcontext.getNodeInstance()).cancel();" : "") +
+                    "kcontext.getProcessInstance().signalEvent(\"Timer-" + attachedTo + "-" + timeDate + "\", null);"));
+        }
+    }
+
+    private static void linkBoundaryCompensationEvent(NodeContainer nodeContainer, Node node, String attachedTo, Node attachedNode) {
+        // BPMN2 Spec, p. 264: 
+        // "For an Intermediate event attached to the boundary of an activity:"
+        // ...
+        // "The Activity the Event is attached to will provide the Id necessary
+        //  to match the Compensation Event with the Event that threw the compensation"
+        // 
+        // In other words: "activityRef" is IGNORED 
+        String eventType = "Compensate-" + attachedTo; 
+        ((EventTypeFilter) ((EventNode) node).getEventFilters().get(0)).setType(eventType);
+        throw new IllegalArgumentException("Compensation is not supported yet (Boundary Compensation event on node " + attachedTo);
+    }
+
+    private static void linkBoundarySignalOrMessageEvent(NodeContainer nodeContainer, Node node, String attachedTo,
+            Node attachedNode) {
+        boolean cancelActivity = (Boolean) node.getMetaData().get("CancelActivity");
+        final long attachedToNodeId = attachedNode.getId();
+        if (cancelActivity) {
+            List<DroolsAction> actions = ((EventNode)node).getActions(EndNode.EVENT_NODE_EXIT);
+            if (actions == null) {
+                actions = new ArrayList<DroolsAction>();
+            }
+            DroolsConsequenceAction action =  new DroolsConsequenceAction("java", null);
+            action.setMetaData("Action", new CancelNodeInstanceAction(attachedToNodeId));
+            actions.add(action);
+            ((EventNode)node).setActions(EndNode.EVENT_NODE_EXIT, actions);
+        }
+        // cancel boundary event when node is completed by removing filter
+        final long id = node.getId();
+        StateBasedNode stateBasedNode = (StateBasedNode) attachedNode;
+
+        List<DroolsAction> actionsAttachedTo = stateBasedNode.getActions(StateBasedNode.EVENT_NODE_EXIT);
+        if (actionsAttachedTo == null) {
+            actionsAttachedTo = new ArrayList<DroolsAction>();
+        }
+        DroolsConsequenceAction actionAttachedTo =  new DroolsConsequenceAction("java", "" +
+                "org.kie.api.definition.process.Node node = context.getNodeInstance().getNode().getNodeContainer().getNode(" +id+ ");" +
+                "if (node instanceof org.jbpm.workflow.core.node.EventNode) {" +
+                " ((org.jbpm.workflow.core.node.EventNode)node).getEventFilters().clear();" +
+                "((org.jbpm.workflow.core.node.EventNode)node).addEventFilter(new org.jbpm.process.core.event.EventFilter () " +
+                "{public boolean acceptsEvent(String type, Object event) { return false;}});" +
+                "}");
+
+
+        actionsAttachedTo.add(actionAttachedTo);
+        stateBasedNode.setActions(StateBasedNode.EVENT_NODE_EXIT, actionsAttachedTo);
+    }
+                        
+    private static void linkBoundaryConditionEvent(NodeContainer nodeContainer, Node node, String attachedTo, Node attachedNode) {
+        String processId = ((RuleFlowProcess) nodeContainer).getId();
+        String eventType = "RuleFlowStateEvent-" + processId + "-" + ((EventNode) node).getUniqueId() + "-" + attachedTo;
+        ((EventTypeFilter) ((EventNode) node).getEventFilters().get(0)).setType(eventType);
+        final long attachedToNodeId = attachedNode.getId();
+        boolean cancelActivity = (Boolean) node.getMetaData().get("CancelActivity");
+        if (cancelActivity) {
+            List<DroolsAction> actions = ((EventNode)node).getActions(EndNode.EVENT_NODE_EXIT);
+            if (actions == null) {
+                actions = new ArrayList<DroolsAction>();
+            }
+            DroolsConsequenceAction action =  new DroolsConsequenceAction("java", null);
+            action.setMetaData("Action", new CancelNodeInstanceAction(attachedToNodeId));
+            actions.add(action);
+            ((EventNode)node).setActions(EndNode.EVENT_NODE_EXIT, actions);
+        }
+
+        // cancel boundary event when node is completed by removing filter
+        final long id = node.getId();
+        StateBasedNode stateBasedNode = (StateBasedNode) attachedNode;
+
+        List<DroolsAction> actionsAttachedTo = stateBasedNode.getActions(StateBasedNode.EVENT_NODE_EXIT);
+        if (actionsAttachedTo == null) {
+            actionsAttachedTo = new ArrayList<DroolsAction>();
+        }
+        DroolsConsequenceAction actionAttachedTo =  new DroolsConsequenceAction("java", "" +
+                "org.kie.api.definition.process.Node node = context.getNodeInstance().getNode().getNodeContainer().getNode(" +id+ ");" +
+                "if (node instanceof org.jbpm.workflow.core.node.EventNode) {" +
+                " ((org.jbpm.workflow.core.node.EventNode)node).getEventFilters().clear();" +
+                "((org.jbpm.workflow.core.node.EventNode)node).addEventFilter(new org.jbpm.process.core.event.EventFilter () " +
+                "{public boolean acceptsEvent(String type, Object event) { return false;}});" +
+                "}");
+
+
+        actionsAttachedTo.add(actionAttachedTo);
+        stateBasedNode.setActions(StateBasedNode.EVENT_NODE_EXIT, actionsAttachedTo);
+        stateBasedNode.addBoundaryEvents(eventType);
     }
     
     private static void linkBoundaryEscalationEvent(NodeContainer nodeContainer, Node node, String attachedTo, Node attachedNode) {
