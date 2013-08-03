@@ -35,6 +35,7 @@ import org.jbpm.process.instance.ContextInstance;
 import org.jbpm.process.instance.ContextInstanceContainer;
 import org.jbpm.process.instance.InternalProcessRuntime;
 import org.jbpm.process.instance.ProcessInstance;
+import org.jbpm.process.instance.context.exception.CompensationScopeInstance;
 import org.jbpm.process.instance.context.exception.ExceptionScopeInstance;
 import org.jbpm.process.instance.context.exclusive.ExclusiveGroupInstance;
 import org.jbpm.process.instance.context.variable.VariableScopeInstance;
@@ -425,8 +426,12 @@ public abstract class NodeInstanceImpl implements org.jbpm.workflow.instance.Nod
     		if (contextInstanceContainer.getContextContainer() == contextContainer) {
     			return contextInstanceContainer;
     		}
+    		if( contextInstanceContainer instanceof CompensationScopeInstance ) { 
+    		    return contextInstanceContainer;
+    		} else {
     		contextInstanceContainer = getEnclosingContextInstanceContainer(
 				(NodeInstance) contextInstanceContainer);
+    		}
     	}
         return null;
     }

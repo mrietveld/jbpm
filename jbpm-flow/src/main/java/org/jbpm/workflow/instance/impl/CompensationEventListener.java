@@ -40,14 +40,14 @@ import org.kie.api.runtime.process.EventListener;
 
 class CompensationEventListener implements EventListener {
 
-    private WorkflowProcessInstanceImpl instance;
+    private WorkflowProcessInstanceImpl processInstance;
     
     public CompensationEventListener(WorkflowProcessInstanceImpl instance) { 
-        this.instance = instance;
+        this.processInstance = instance;
     }
     
     private ProcessInstance getProcessInstance() { 
-        return instance;
+        return processInstance;
     }
     
     /**
@@ -64,7 +64,7 @@ class CompensationEventListener implements EventListener {
         if( activityRefStr == null || ! (activityRefStr instanceof String) ) { 
             throw new WorkflowRuntimeException(null, getProcessInstance(), 
                     "Compensation can only be triggered with String events, not an event of type " 
-                    + activityRefStr == null ? "null" : activityRefStr.getClass().getSimpleName());
+                    + (activityRefStr == null ? "null" : activityRefStr.getClass().getSimpleName()));
         }
        
         // 1. parse the activity ref (is it general or specific compensation?)
@@ -76,14 +76,14 @@ class CompensationEventListener implements EventListener {
             generalCompensation = true;
         } 
        
-        org.jbpm.process.core.Process process = (org.jbpm.process.core.Process) instance.getProcess();
+        org.jbpm.process.core.Process process = (org.jbpm.process.core.Process) processInstance.getProcess();
 
         // 2. for specific compensation: find the node that will be compensated
         //    for general compensation: find the compensation scope container that contains all the visible compensation handlers
         Node toCompensateNode = null;
         ContextContainer compensationScopeContainer = null;
         if( generalCompensation ) { 
-            if( toCompensateNodeId.equals(instance.getProcessId()) ) {
+            if( toCompensateNodeId.equals(processInstance.getProcessId()) ) {
                 compensationScopeContainer = process;
             } else { 
                 compensationScopeContainer = (ContextContainer) findNode(toCompensateNodeId);
@@ -99,32 +99,16 @@ class CompensationEventListener implements EventListener {
         if( toCompensateNode != null || compensationScopeContainer != null ) { 
             CompensationScope compensationScope = null;
             if( compensationScopeContainer != null  ) { 
+                // general 
                 compensationScope = (CompensationScope) compensationScopeContainer.getDefaultContext(COMPENSATION_SCOPE);
             } else { 
-                compensationScope 
-                    = (CompensationScope) ((NodeImpl) toCompensateNode).resolveContext(COMPENSATION_SCOPE, toCompensateNodeId);
+                // specific
+                compensationScope = (CompensationScope) ((NodeImpl) toCompensateNode).resolveContext(COMPENSATION_SCOPE, toCompensateNodeId);
             }
             assert compensationScope != null : "Compensation scope for node [" + toCompensateNodeId + "] could not be found!";
 
-            CompensationScopeInstance scopeInstance;
-            if( compensationScope.getContextContainerId().equals(process.getId()) ) {
-                // process level compensation
-                scopeInstance = (CompensationScopeInstance) instance.getContextInstance(compensationScope);
-            } else { 
-                // nested compensation
-                Stack<NodeInstance> generatedInstances;
-                if( toCompensateNode == null ) { 
-                    // logic is the same if it's specific or general
-                    generatedInstances = createNodeInstanceContainers((Node) compensationScopeContainer, true);
-                } else { 
-                    generatedInstances = createNodeInstanceContainers(toCompensateNode, false);
-                }
-                NodeInstance nodeInstanceContainer = generatedInstances.peek();
-                scopeInstance 
-                    = ((CompensationScopeInstance) 
-                            ((ContextInstanceContainer) nodeInstanceContainer).getContextInstance(compensationScope));
-                scopeInstance.addCompensationInstances(generatedInstances);
-            }
+            CompensationScopeInstance scopeInstance = (CompensationScopeInstance) processInstance.getContextInstance(compensationScope);
+            scopeInstance.setCompensationScope(compensationScope); 
             
             scopeInstance.handleException(activityRef, null);     
         }
@@ -133,7 +117,7 @@ class CompensationEventListener implements EventListener {
     private Node findNode(String nodeId) { 
         Node found = null;
         Queue<Node> allProcessNodes = new LinkedList<Node>();
-        allProcessNodes.addAll(Arrays.asList( instance.getNodeContainer().getNodes() ));
+        allProcessNodes.addAll(Arrays.asList( processInstance.getNodeContainer().getNodes() ));
         while( ! allProcessNodes.isEmpty() ) { 
             Node node = allProcessNodes.poll();
             if( nodeId.equals(node.getMetaData().get("UniqueId")) ) {
@@ -147,47 +131,6 @@ class CompensationEventListener implements EventListener {
         return found;
     }
 
-    private Stack<NodeInstance> createNodeInstanceContainers(Node toCompensateNode, boolean generalCompensation) { 
-       Stack<NodeContainer> nestedNodes = new Stack<NodeContainer>();
-       Stack<NodeInstance> generatedInstances = new Stack<NodeInstance>();
-       
-       NodeContainer parentContainer = toCompensateNode.getNodeContainer();
-       while( !(parentContainer instanceof RuleFlowProcess) ) { 
-           nestedNodes.add(parentContainer);
-           parentContainer = ((Node) parentContainer).getNodeContainer();
-       }
-       
-       NodeInstanceContainer parentInstance;
-       
-       if( nestedNodes.isEmpty() ) {
-           // nestedNodes is empty
-           parentInstance = (NodeInstanceContainer) getProcessInstance();
-       } else { 
-           parentInstance = (NodeInstanceContainer) ((WorkflowProcessInstanceImpl) getProcessInstance()).getNodeInstance((Node) nestedNodes.pop());
-           generatedInstances.add((NodeInstance) parentInstance);
-       }
-       
-       NodeInstanceContainer childInstance = parentInstance;
-       while( ! nestedNodes.isEmpty() ) {
-           // generate
-           childInstance = (NodeInstanceContainer) parentInstance.getNodeInstance((Node) nestedNodes.pop());
-           assert childInstance instanceof CompositeNodeInstance 
-               : "A node with child nodes should end up creating a CompositeNodeInstance type.";
-           
-           // track and modify
-           generatedInstances.add((NodeInstance) childInstance);
-           
-           // loop
-           parentInstance = (CompositeContextNodeInstance) childInstance;
-       }
-       if( generalCompensation ) { 
-           childInstance = (NodeInstanceContainer) parentInstance.getNodeInstance(toCompensateNode);
-           generatedInstances.add((NodeInstance) childInstance);
-       }
-       
-       return generatedInstances;
-    }
-    
     private final String [] eventTypes = { "Compensation" };
     public String[] getEventTypes() {
         return eventTypes;
