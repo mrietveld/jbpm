@@ -908,7 +908,7 @@ public abstract class JbpmBpmn2TestCase extends AbstractBaseTest {
     }
 
     protected void assertProcessInstanceActive(long processInstanceId, KieSession ksession) {
-        assertNotNull(ksession.getProcessInstance(processInstanceId));
+        assertNotNull("Process instance is not active.", ksession.getProcessInstance(processInstanceId));
     }
 
     private static class H2Server {

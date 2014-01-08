@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<definitions id="Definition"
+             targetNamespace="http://www.example.org/MinimalExample"
+             typeLanguage="http://www.java.com/javaTypes"
+             expressionLanguage="http://www.mvel.org/2.0"
+             xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:tns="http://www.jboss.org/drools">
+
+  <itemDefinition id="_xItem" structureRef="String" />
+
+  <process processType="Private" isExecutable="true" id="signal-task" name="signal task process" >
+
+    <!-- process variables -->
+    <property id="x" itemSubjectRef="_xItem"/>
+
+    <!-- nodes -->
+    <startEvent id="_1" name="start" />
+    <sequenceFlow id="_1-_2" sourceRef="_1" targetRef="_2" />
+
+    <parallelGateway id="_2" name="split" gatewayDirection="Diverging" />
+    <sequenceFlow id="_2-_3" sourceRef="_2" targetRef="_3" />
+    <sequenceFlow id="_2-_5" sourceRef="_2" targetRef="_6" />
+
+    <!-- branch 1 -->
+    <intermediateThrowEvent id="_3" name="signal-task-1" >
+      <dataInput id="_3_Input" />
+      <dataInputAssociation>
+        <sourceRef>x</sourceRef>
+        <targetRef>_3_Input</targetRef>
+      </dataInputAssociation>
+      <inputSet>
+        <dataInputRefs>_3_Input</dataInputRefs>
+      </inputSet>
+      <signalEventDefinition signalRef="task-sig"/>
+    </intermediateThrowEvent>
+    <sequenceFlow id="_3-_4" sourceRef="_3" targetRef="_4" />
+
+    <scriptTask id="_4" name="print-1" >
+      <script>System.out.println(x);</script>
+    </scriptTask>
+    <sequenceFlow id="_4-_5" sourceRef="_4" targetRef="_5" />
+
+    <endEvent id="_5" name="end-1" />
+
+    <!-- branch 2 -->
+    <intermediateThrowEvent id="_6" name="signal-task-2" >
+      <signalEventDefinition signalRef="task-sig"/>
+    </intermediateThrowEvent>
+    <sequenceFlow id="_6-_7" sourceRef="_6" targetRef="_7" />
+
+    <intermediateCatchEvent id="_7" name="wait-done-2" >
+      <signalEventDefinition signalRef="done"/>
+    </intermediateCatchEvent>
+    <sequenceFlow id="_7-_8" sourceRef="_7" targetRef="_8" />
+
+    <endEvent id="_8" name="end-2" >
+        <terminateEventDefinition/>
+    </endEvent>
+
+    <!-- event sub-process with task2 -->
+    <subProcess id="_X" name="event-sub" triggeredByEvent="true" >
+      <startEvent id="_X-1" name="start-sub" isInterrupting="false">
+        <signalEventDefinition id="_X-one" signalRef="task-sig"/>
+      </startEvent>
+      <sequenceFlow id="_X-1-_X-2" sourceRef="_X-1" targetRef="_X-2"/>
+
+      <userTask id="_X-2" name="sub-task" >
+        <ioSpecification>
+          <dataOutput id="_taskOutput" name="output"/>
+          <inputSet></inputSet>
+          <outputSet>
+            <dataOutputRefs>_taskOutput</dataOutputRefs>
+          </outputSet>
+        </ioSpecification>
+        <dataOutputAssociation>
+          <sourceRef>_taskOutput</sourceRef>
+          <targetRef>x</targetRef>
+        </dataOutputAssociation>
+      </userTask>
+      <sequenceFlow id="_X-2-_X-3" sourceRef="_X-2" targetRef="_X-3"/>
+
+      <endEvent id="_X-3" name="end-sub" />
+    </subProcess>
+
+  </process>
+
+</definitions>

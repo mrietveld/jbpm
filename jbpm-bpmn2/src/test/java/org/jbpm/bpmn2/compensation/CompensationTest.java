@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jbpm.bpmn2;
+package org.jbpm.bpmn2.compensation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jbpm.bpmn2.JbpmBpmn2TestCase;
 import org.jbpm.bpmn2.objects.TestWorkItemHandler;
 import org.jbpm.process.core.context.exception.CompensationScope;
 import org.jbpm.process.instance.impl.demo.SystemOutWorkItemHandler;
@@ -87,7 +88,7 @@ public class CompensationTest extends JbpmBpmn2TestCase {
 
         ksession.getWorkItemManager().completeWorkItem(workItemHandler.getWorkItem().getId(), null);
 
-        // compensation activity (assoc. with script task) signaled *after* script task
+        // compensation activity (assoc. with script task) signaled *after* user task
         assertProcessInstanceCompleted(processInstance.getId(), ksession);
         assertProcessVarValue(processInstance, "x", "1" );
     }
@@ -105,11 +106,16 @@ public class CompensationTest extends JbpmBpmn2TestCase {
         
         // twice
         ksession.signalEvent("Compensation", CompensationScope.IMPLICIT_COMPENSATION_PREFIX + processId, processInstance.getId());
-        ksession.getWorkItemManager().completeWorkItem(workItemHandler.getWorkItem().getId(), null);
+        // for compensation
+        List<WorkItem> workItems = workItemHandler.getWorkItems();
+        ksession.getWorkItemManager().completeWorkItem(workItems.remove(0).getId(), null);
+        
+        // finish process
+        ksession.getWorkItemManager().completeWorkItem(workItems.remove(0).getId(), null);
 
         // compensation activity (assoc. with script task) signaled *after* script task
         assertProcessInstanceCompleted(processInstance.getId(), ksession);
-        assertProcessVarValue(processInstance, "x", "2");
+//        assertProcessVarValue(processInstance, "x", "2");
     }
     
     @Test
@@ -258,4 +264,39 @@ public class CompensationTest extends JbpmBpmn2TestCase {
         assertProcessVarValue(processInstance, "compensation", "compensation");
     }
     
+    @Test
+    public void compensationViaIntermediateThrowEventProcessWithPersistence() throws Exception {
+        KieSession ksession = createKnowledgeSession("compensation/BPMN2-Compensation-IntermediateThrowEvent-Persistence.bpmn2");
+        TestWorkItemHandler workItemHandler = new TestWorkItemHandler();
+        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", workItemHandler);
+        
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("x", "0");
+        ProcessInstance processInstance = ksession.startProcess("CompensateIntermediateThrowEvent", params);
+
+        ksession.getWorkItemManager().completeWorkItem(workItemHandler.getWorkItem().getId(), null);
+        
+        // for compensation
+        ksession.getWorkItemManager().completeWorkItem(workItemHandler.getWorkItem().getId(), null);
+
+        // compensation activity (assoc. with script task) signaled *after* script task
+        assertProcessInstanceCompleted(processInstance.getId(), ksession);
+//        assertProcessVarValue(processInstance, "x", "1" );
+    }
+    
+    @Test
+    public void compensationViaEventSubProcessWithPersistence() throws Exception {
+        KieSession ksession = createKnowledgeSession("compensation/BPMN2-Compensation-EventSubProcess-Persistence.bpmn2");
+        TestWorkItemHandler workItemHandler = new TestWorkItemHandler();
+        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", workItemHandler);
+ 
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("x", "0");
+        ProcessInstance processInstance = ksession.startProcess("CompensationEventSubProcess", params);
+
+        assertProcessInstanceActive(processInstance.getId(), ksession);
+        ksession.getWorkItemManager().completeWorkItem(workItemHandler.getWorkItem().getId(), null);
+        assertProcessInstanceCompleted(processInstance.getId(), ksession);
+    }
+
 }

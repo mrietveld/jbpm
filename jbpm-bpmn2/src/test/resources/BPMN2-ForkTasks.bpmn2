@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<definitions id="Definition"
+             targetNamespace="http://www.example.org/MinimalExample"
+             typeLanguage="http://www.java.com/javaTypes"
+             expressionLanguage="http://www.mvel.org/2.0"
+             xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:tns="http://www.jboss.org/drools">
+
+  <itemDefinition id="_xItem" structureRef="String" />
+
+  <process processType="Private" isExecutable="true" id="two-tasks" >
+
+    <!-- process variables -->
+    <property id="x" itemSubjectRef="_xItem"/>
+
+    <!-- nodes -->
+    <startEvent id="_1" name="start" />
+    <sequenceFlow id="_1-_2" sourceRef="_1" targetRef="_2" />
+
+    <parallelGateway id="_2" name="split" gatewayDirection="Diverging" />
+    <sequenceFlow id="_2-_3" sourceRef="_2" targetRef="_3" />
+    <sequenceFlow id="_2-_5" sourceRef="_2" targetRef="_5" />
+
+    <!-- branch 1 -->
+    <userTask id="_3" name="one" />
+    <sequenceFlow id="_3-_4" sourceRef="_3" targetRef="_4" />
+
+    <endEvent id="_4" name="end-1" />
+
+    <!-- branch 2 -->
+    <userTask id="_5" name="two" />
+    <sequenceFlow id="_5-_6" sourceRef="_5" targetRef="_6" />
+
+    <endEvent id="_6" name="end-2" />
+
+  </process>
+
+</definitions>
