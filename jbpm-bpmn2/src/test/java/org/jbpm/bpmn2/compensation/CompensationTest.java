@@ -42,16 +42,22 @@ import org.kie.api.runtime.process.WorkItem;
 @RunWith(Parameterized.class)
 public class CompensationTest extends JbpmBpmn2TestCase {
 
-    @Parameters
+    private static String PERSISTENCE = "persistence";
+    private static String STATELESS = "stateless";
+    
+    @Parameters(name="{0}")
     public static Collection<Object[]> persistence() {
-        Object[][] data = new Object[][] { { false }, { true } };
+        Object[][] data = new Object[][] { 
+                { STATELESS }, 
+                { PERSISTENCE } 
+                };
         return Arrays.asList(data);
     };
 
     private KieSession ksession;
 
-    public CompensationTest(boolean persistence) {
-        super(persistence);
+    public CompensationTest(String persistOption) {
+        super((PERSISTENCE.equals(persistOption) ? true : false));
     }
 
     @BeforeClass
