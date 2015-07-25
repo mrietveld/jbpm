@@ -368,8 +368,6 @@ public class JPAAuditLogService extends JPAService implements AuditLogService {
        return getQueryCriteriaUtil(queryType).doCriteriaQuery(queryWhere, queryType);
     }
    
-    // Delete queries -------------------------------------------------------------------------------------------------------------
-   
     public static Map<String, String> criteriaFields = new ConcurrentHashMap<String, String>();
     public static Map<String, Class<?>> criteriaFieldClasses = new ConcurrentHashMap<String, Class<?>>();
     
@@ -622,5 +620,4 @@ public class JPAAuditLogService extends JPAService implements AuditLogService {
         applyMetaQueryParameters(params, query);
         return query.executeUpdate();
     }
-
 }

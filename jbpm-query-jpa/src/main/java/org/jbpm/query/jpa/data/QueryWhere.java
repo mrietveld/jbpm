@@ -16,6 +16,7 @@
 package org.jbpm.query.jpa.data;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Stack;
 
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Subquery;
+import javax.persistence.metamodel.Attribute;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -34,6 +36,7 @@ import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.hibernate.hql.internal.ast.util.JoinProcessor;
 
 /**
  * THIS CLASS SHOULD NEVER BE EXPOSED IN THE PUBLIC API!!
@@ -339,6 +342,5 @@ public class QueryWhere {
 
        this.joinPredicates = queryWhere.joinPredicates;
     }
-
 
 }
