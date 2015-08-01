@@ -106,9 +106,9 @@ public class QueryWhere {
     private transient Object currentParent = this;
 
     @JsonIgnore
-    private transient Map<String, Predicate> joinPredicates = null;
-
-    public QueryWhere() {
+    private transient Map<String, Object> joinPredicates = null;
+    
+    public QueryWhere() { 
         // JAXB constructor
     }
 
@@ -302,10 +302,10 @@ public class QueryWhere {
     public void setToGroup() {
         this.type = QueryCriteriaType.GROUP;
     }
-
-    public Map<String, Predicate> getJoinPredicates() {
-        if( this.joinPredicates == null ) {
-          this.joinPredicates = new HashMap<String, Predicate>(3);
+    
+    public Map<String, Object> getJoinPredicates() { 
+        if( this.joinPredicates == null ) { 
+          this.joinPredicates = new HashMap<String, Object>(5);  
         }
         return this.joinPredicates;
     }
