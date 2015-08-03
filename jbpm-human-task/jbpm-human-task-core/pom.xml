@@ -97,7 +97,13 @@
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-asl</artifactId>
     </dependency>
-   
+
+    <!-- KRYO serialization -->  
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>kryo</artifactId>
+    </dependency>
+ 
     <!-- TEST -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -210,6 +216,16 @@
     </dependency>
   </dependencies>
 
+  <dependencyManagement>
+    <dependencies>
+        <dependency>
+          <groupId>com.esotericsoftware</groupId>
+          <artifactId>kryo</artifactId>
+          <version>3.0.2</version>
+        </dependency>
+    </dependencies>
+  </dependencyManagement>
+  
   <build>
     <testResources>
       <testResource>
