@@ -23,40 +23,20 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.Query;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.ListJoin;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
-import javax.persistence.metamodel.Attribute;
-import javax.persistence.metamodel.PluralAttribute;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.internal.SessionImpl;
-import org.hibernate.persister.collection.CollectionPersister;
 import org.jbpm.services.task.HumanTaskServiceFactory;
 import org.jbpm.services.task.HumanTaskServicesBaseTest;
 import org.jbpm.services.task.commands.GetTasksByVariousFieldsCommand;
 import org.jbpm.services.task.impl.factories.TaskFactory;
-import org.jbpm.services.task.impl.model.OrganizationalEntityImpl;
-import org.jbpm.services.task.impl.model.OrganizationalEntityImpl_;
-import org.jbpm.services.task.impl.model.PeopleAssignmentsImpl;
-import org.jbpm.services.task.impl.model.PeopleAssignmentsImpl_;
-import org.jbpm.services.task.impl.model.TaskDataImpl;
-import org.jbpm.services.task.impl.model.TaskDataImpl_;
 import org.jbpm.services.task.impl.model.TaskImpl;
-import org.jbpm.services.task.impl.model.TaskImpl_;
-import org.jbpm.services.task.impl.model.UserImpl_;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +56,8 @@ public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
 
     private PoolingDataSource pds;
     private EntityManagerFactory emf;
+
+    private static final Random random = new Random();
 
     @Before
     public void setup() {
@@ -171,7 +153,7 @@ public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
 
             // start task
             taskService.start(taskImpl.getId(), potOwner);
-            tasks[1] = (Task) taskService.getTaskById(taskImpl.getId());
+            tasks[1] = taskService.getTaskById(taskImpl.getId());
             statuses.add(tasks[1].getTaskData().getStatus());
 
             procInstIds.add(procInstId);
@@ -205,7 +187,7 @@ public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
         queryCmd.setUserId(stakeHolder);
         queryCmd.setUnion(false);
         queryCmd.setMaxResults(2);
-        results = ((InternalTaskService) taskService).execute(queryCmd);
+        results = taskService.execute(queryCmd);
         assertEquals("List of tasks: max results", 2, results.size());
         testOrderByTaskIdAscending(results);
         assertEquals( "Did not order when returning tasks (first task id: " + results.get(0).getId(), firstTaskId.longValue(), results.get(0).getId().longValue());
@@ -332,6 +314,41 @@ public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
         results = taskService.getTasksByVariousFields("Wintermute", null, null, null, null, potOwners,  null, null, null, false);
         assertEquals(0, results.size());
     }
+
+    @Test
+    public void testGetTasksByVariousFieldsForOtherUserWithUserGroupCallback() {
+
+        String potOwner = "Bobba Fet";
+        List<String> potOwners = new ArrayList<String>();
+        potOwners.add(potOwner);
+        Long procInstId = (long) random.nextInt(1000);
+        String str = "(with (new Task()) { priority = 55, taskData = (with( new TaskData()) { processInstanceId = " + procInstId + " } ), "
+                + "peopleAssignments = (with ( new PeopleAssignments() ) { "
+                + "businessAdministrators = [new Group('Administrators')],"
+                + "potentialOwners = [new Group('Crusaders')]"
+                + " }),";
+        str += "name = 'This is my task name' })";
+        Task task = TaskFactory.evalTask(new StringReader(str));
+        taskService.addTask(task, new HashMap<String, Object>());
+
+        TaskQueryBuilder queryBuilder = taskService.taskQuery("Administrator");
+        List<TaskSummary> results = queryBuilder.processInstanceId(procInstId).build().getResultList();
+        assertNotNull("Null results with query builder", results);
+        assertEquals("Results with query builder", 1, results.size());
+
+        Map<String, List<?>> parameters = new HashMap<String, List<?>>();
+        parameters.put(QueryParameterIdentifiers.PROCESS_INSTANCE_ID_LIST, Arrays.asList(new Long [] { procInstId }));
+        results = taskService.getTasksByVariousFields( "Administrator", parameters, false);
+
+        assertNotNull("Null results with various fields cmd", results);
+        assertEquals("Results with various fields cmd", 1, results.size());
+        TaskSummary resultTask = results.get(0);
+
+        // "Wintermute" does not have the proper permissions
+        results = taskService.getTasksByVariousFields("Wintermute", parameters, false);
+        assertEquals(0, results.size());
+    }
+
 
     @Test
     public void testGetTasksByVariousFieldsWithUserGroupCallbackAdmin() {
@@ -463,7 +480,7 @@ public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
 
             // start task
             taskService.start(taskImpl.getId(), potOwner);
-            tasks[1] = (Task) taskService.getTaskById(taskImpl.getId());
+            tasks[1] = taskService.getTaskById(taskImpl.getId());
             statuses.add(tasks[1].getTaskData().getStatus());
 
             procInstIds.add(procInstId);
