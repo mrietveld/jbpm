@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jbpm</groupId>
@@ -26,12 +26,28 @@
      -->
   </properties>
   
-  <dependencies>
-  <dependency>
-    <groupId>com.google.protobuf</groupId>
-    <artifactId>protobuf-java</artifactId>
-  </dependency>
+    <!-- These versions were on master in the arquillian-container-jetty repository -->
+    <shrinkwrap.resolver.version>2.1.1</shrinkwrap.resolver.version>
+    <arquillian.version>1.1.8.Final</arquillian.version>
 
+    <!-- aether/maven, mostly for arquillian/shrinkwrap -->
+    <override.version.org.apache.maven>3.1.1</override.version.org.apache.maven>
+    <override.version.org.eclipse.aether>0.9.0.M2</override.version.org.eclipse.aether>
+
+  </properties>
+
+  <dependencies>
+    <!-- kie -->
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-internal</artifactId>
+    </dependency>
+
+    <!-- drools/jbpm -->
     <dependency>
       <groupId>org.jbpm</groupId>
       <artifactId>jbpm-flow</artifactId>
@@ -43,16 +59,18 @@
     <dependency>
       <groupId>org.jbpm</groupId>
       <artifactId>jbpm-query-jpa</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>hibernate-jpa-2.0-api</artifactId>
+          <groupId>org.hibernate.javax.persistence</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
+    <!-- other -->
     <dependency>
-      <groupId>org.kie</groupId>
-      <artifactId>kie-api</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.kie</groupId>
-      <artifactId>kie-internal</artifactId>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
     </dependency>
 
     <dependency>
@@ -66,7 +84,7 @@
 
     <dependency>
       <groupId>org.hibernate.javax.persistence</groupId>
-      <artifactId>hibernate-jpa-2.0-api</artifactId>
+      <artifactId>hibernate-jpa-2.1-api</artifactId>
     </dependency>
 
     <dependency>
@@ -95,30 +113,48 @@
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-asl</artifactId>
     </dependency>
-   
+
     <!-- TEST -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <scope>test</scope>
     </dependency>
-    
+
     <!-- persistence -->
     <dependency>
-	    <groupId>org.jbpm</groupId>
-	    <artifactId>jbpm-human-task-jpa</artifactId>
-	    <scope>test</scope>
+      <groupId>org.jbpm</groupId>
+      <artifactId>jbpm-human-task-jpa</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hibernate-jpa-2.0-api</artifactId>
+          <groupId>org.hibernate.javax.persistence</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.jbpm</groupId>
       <artifactId>jbpm-persistence-jpa</artifactId>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hibernate-jpa-2.0-api</artifactId>
+          <groupId>org.hibernate.javax.persistence</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.jbpm</groupId>
       <artifactId>jbpm-persistence-jpa</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hibernate-jpa-2.0-api</artifactId>
+          <groupId>org.hibernate.javax.persistence</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
@@ -128,6 +164,11 @@
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate.common</groupId>
+    <artifactId>hibernate-commons-annotations</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -145,8 +186,14 @@
       <artifactId>jbpm-query-jpa</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hibernate-jpa-2.0-api</artifactId>
+          <groupId>org.hibernate.javax.persistence</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
-    
+
     <dependency>
       <groupId>org.subethamail</groupId>
       <artifactId>subethasmtp-wiser</artifactId>
@@ -162,7 +209,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-    
+
     <!-- serialization tests -->
     <dependency>
       <groupId>org.jboss.resteasy</groupId>
@@ -191,24 +238,147 @@
       <artifactId>commons-collections</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- multiple hibernate versions tests -->
+    <dependency>
+      <groupId>org.jboss.weld</groupId>
+      <artifactId>weld-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.spec.javax.el</groupId>
+  <artifactId>jboss-el-api_2.2_spec</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.arquillian.junit</groupId>
+      <artifactId>arquillian-junit-container</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.arquillian.container</groupId>
+      <artifactId>arquillian-weld-se-embedded-1.1</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.arquillian.core</groupId>
+      <artifactId>arquillian-core-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.jboss.shrinkwrap.resolver</groupId>
+      <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <dependencyManagement>
     <dependencies>
-        <dependency>
+    
+    <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
+      <version>4.3.9.Final</version>
       <scope>test</scope>
-      <version>4.2.19.Final-redhat-1</version>
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
+      <version>4.3.9.Final</version>
       <scope>test</scope>
-      <version>4.2.19.Final-redhat-1</version>
     </dependency>
+    <dependency>
+      <groupId>org.hibernate.javax.persistence</groupId>
+      <artifactId>hibernate-jpa-2.1-api</artifactId>
+      <version>1.0.0.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.common</groupId>
+      <artifactId>hibernate-commons-annotations</artifactId>
+      <version>4.0.5.Final</version>
+    </dependency>
+    
+      <!-- apache maven -->
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>${override.version.org.apache.maven}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model-builder</artifactId>
+        <version>${override.version.org.apache.maven}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-repository-metadata</artifactId>
+        <version>${override.version.org.apache.maven}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-settings</artifactId>
+        <version>${override.version.org.apache.maven}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-settings-builder</artifactId>
+        <version>${override.version.org.apache.maven}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-aether-provider</artifactId>
+        <version>${override.version.org.apache.maven}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- eclipse aether -->
+      <dependency>
+        <groupId>org.eclipse.aether</groupId>
+        <artifactId>aether-api</artifactId>
+        <version>${override.version.org.eclipse.aether}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.aether</groupId>
+        <artifactId>aether-spi</artifactId>
+        <version>${override.version.org.eclipse.aether}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.aether</groupId>
+        <artifactId>aether-impl</artifactId>
+        <version>${override.version.org.eclipse.aether}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.aether</groupId>
+        <artifactId>aether-util</artifactId>
+        <version>${override.version.org.eclipse.aether}</version>
+      </dependency>
+
+      <!-- arquillian -->
+      <!-- Override dependency resolver with test version. This must go *BEFORE* the Arquillian BOM. -->
+      <dependency>
+        <groupId>org.jboss.shrinkwrap.resolver</groupId>
+        <artifactId>shrinkwrap-resolver-bom</artifactId>
+        <version>${shrinkwrap.resolver.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+      <!-- arquillian: contains all versions for specific arquillian artifacts -->
+      <dependency>
+        <groupId>org.jboss.arquillian</groupId>
+        <artifactId>arquillian-bom</artifactId>
+        <version>${arquillian.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
+
   <build>
     <testResources>
       <testResource>

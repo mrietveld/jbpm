@@ -30,15 +30,11 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
-import org.jbpm.services.task.HumanTaskServiceFactory;
 import org.jbpm.services.task.HumanTaskServicesBaseTest;
 import org.jbpm.services.task.commands.GetTasksByVariousFieldsCommand;
 import org.jbpm.services.task.impl.factories.TaskFactory;
 import org.jbpm.services.task.impl.model.TaskImpl;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
@@ -52,33 +48,14 @@ import org.kie.internal.task.query.TaskQueryBuilder.OrderBy;
 import bitronix.tm.resource.jdbc.PoolingDataSource;
 
 @SuppressWarnings("deprecation")
-public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
+public abstract class TaskQueryBuilderBaseTest extends HumanTaskServicesBaseTest {
 
     protected PoolingDataSource pds;
     protected EntityManagerFactory emf;
 
     private static final Random random = new Random();
 
-    @Before
-    public void setup() {
-        pds = setupPoolingDataSource();
-        emf = Persistence.createEntityManagerFactory( "org.jbpm.services.task" );
-
-        this.taskService = (InternalTaskService) HumanTaskServiceFactory.newTaskServiceConfigurator()
-                                                .entityManagerFactory(emf)
-                                                .getTaskService();
-    }
-
-    @After
-    public void clean() {
-        super.tearDown();
-        if (emf != null) {
-            emf.close();
-        }
-        if (pds != null) {
-            pds.close();
-        }
-    }
+    protected InternalTaskService taskService;
 
     private static final String stakeHolder = "vampire";
 
@@ -458,8 +435,7 @@ public class TaskQueryBuilderLocalTest extends HumanTaskServicesBaseTest {
                     .processInstanceId(procInstId)
                     .businessAdmin(busAdmin)
                     .potentialOwner(potOwner)
-                    .taskId(taskImpl.getId())
-                    .ascending(OrderBy.taskId);
+                    .taskId(taskImpl.getId());
             List<TaskSummary> results = queryBuilder.build().getResultList();
             assertEquals("List of tasks", 1, results.size());
 
