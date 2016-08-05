@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.assertj.core.api.Assertions;
-import org.jbpm.test.JbpmTestCase;
+import org.jbpm.test.JbpmTestCoverageTestCase;
 import org.jbpm.test.iodata.SignalObjectReport;
 import org.junit.Test;
 import org.kie.api.event.process.DefaultProcessEventListener;
@@ -31,7 +31,7 @@ import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkflowProcessInstance;
 import qa.tools.ikeeper.annotation.BZ;
 
-public class StartEventTest extends JbpmTestCase {
+public class StartEventTest extends JbpmTestCoverageTestCase {
 
     private static final String ERROR_EXCEPTION_HANDLER =
             "org/jbpm/test/regression/event/StartEvent-errorExceptionHandler.bpmn2";

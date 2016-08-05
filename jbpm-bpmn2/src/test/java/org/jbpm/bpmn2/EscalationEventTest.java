@@ -16,7 +16,6 @@ limitations under the License.*/
 package org.jbpm.bpmn2;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -45,18 +44,17 @@ import org.slf4j.LoggerFactory;
 public class EscalationEventTest extends JbpmBpmn2TestCase {
 
     @Parameters
-    public static Collection<Object[]> persistence() {
-        Object[][] data = new Object[][] { { false }, { true } };
-        return Arrays.asList(data);
+    public static Collection<Object[]> parameters() {
+        return getTestOptions(TestOption.EXCEPT_FOR_LOCKING);
     };
 
     private Logger logger = LoggerFactory
             .getLogger(EscalationEventTest.class);
 
     private KieSession ksession;
-    
-    public EscalationEventTest(boolean persistence) {
-        super(persistence);
+
+    public EscalationEventTest(boolean persistence, boolean locking, boolean stackless, String name) {
+        super(persistence, locking, stackless, name);
     }
 
     @BeforeClass
@@ -95,7 +93,7 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         }
 
     };
-    
+
     @Test
     public void testEventSubprocessEscalation() throws Exception {
         KieBase kbase = createKnowledgeBase("escalation/BPMN2-EventSubprocessEscalation.bpmn2");
@@ -139,7 +137,7 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ProcessInstance processInstance = ksession.startProcess("EscalationBoundaryEvent");
         assertProcessInstanceCompleted(processInstance);
     }
-    
+
     @Test
     public void testEscalationBoundaryEventInterrupting() throws Exception {
         KieBase kbase = createKnowledgeBase("escalation/BPMN2-EscalationBoundaryEventInterrupting.bpmn2");
@@ -149,10 +147,10 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ProcessInstance processInstance = ksession.startProcess("EscalationBoundaryEvent");
         assertProcessInstanceCompleted(processInstance);
     }
-    
+
     @Test
     @Ignore( "Escalation does not cancel work items yet.")
-    // TODO: make escalation interrupt tasks -- or look more closely at the spec to make sure that's the case? 
+    // TODO: make escalation interrupt tasks -- or look more closely at the spec to make sure that's the case?
     public void testEscalationBoundaryEventInterruptsTask() throws Exception {
         KieBase kbase = createKnowledgeBase("escalation/BPMN2-EscalationBoundaryEventInterrupting.bpmn2");
         ksession = createKnowledgeSession(kbase);
@@ -160,7 +158,7 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ksession.getWorkItemManager().registerWorkItemHandler("MyTask", handler);
         ProcessInstance processInstance = ksession.startProcess("EscalationBoundaryEvent");
         assertProcessInstanceCompleted(processInstance);
-        
+
         // Check for cancellation of task
         assertEquals( "WorkItem was not cancelled!", WorkItem.ABORTED, handler.getWorkItem().getState());
     }
@@ -171,8 +169,8 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ksession = createKnowledgeSession(kbase);
         ProcessInstance processInstance = ksession.startProcess("EscalationIntermediateThrowEvent");
         assertProcessInstanceAborted(processInstance);
-    } 
-    
+    }
+
 
     @Test
     @Ignore( "General escalation is not yet supported.")
@@ -183,17 +181,17 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ksession = createKnowledgeSession(kbase);
         TestWorkItemHandler handler = new TestWorkItemHandler();
         ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
-        
+
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("x", "0");
         ProcessInstance processInstance = ksession.startProcess("non-interrupting-escalation", params);
-       
+
         ksession.getWorkItemManager().completeWorkItem(handler.getWorkItem().getId(), null);
         assertProcessInstanceCompleted(processInstance);
-        // Did escalation fire? 
+        // Did escalation fire?
         assertProcessVarValue(processInstance, "x", "1");
     }
-    
+
     @Test
     public void testInterruptingEscalationBoundaryEventOnTask() throws Exception {
         KieBase kbase = createKnowledgeBase("escalation/BPMN2-EscalationBoundaryEventOnTaskInterrupting.bpmn2");
@@ -214,7 +212,7 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ksession.getWorkItemManager().completeWorkItem(workItem.getId(), null);
         assertProcessInstanceFinished(processInstance, ksession);
     }
-    
+
     @Test
     @Ignore( "Non interrupting escalation has not yet been implemented.")
     // TODO: implement non-interrupting escalation
@@ -236,16 +234,16 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
             johnsWork = workItems.get(1);
         }
 
-        // end event after task triggers escalation 
+        // end event after task triggers escalation
         ksession.getWorkItemManager().completeWorkItem(johnsWork.getId(), null);
-        
-        // escalation should have run.. 
-        
+
+        // escalation should have run..
+
         // should finish process
         ksession.getWorkItemManager().completeWorkItem(marysWork.getId(), null);
         assertProcessInstanceCompleted(processInstance);
     }
-    
+
     @Test
     public void testEscalationEndEventProcess() throws Exception {
         KieBase kbase = createKnowledgeBase("escalation/BPMN2-EscalationEndEvent.bpmn2");
@@ -253,7 +251,7 @@ public class EscalationEventTest extends JbpmBpmn2TestCase {
         ProcessInstance processInstance = ksession.startProcess("EscalationEndEvent");
         assertProcessInstanceAborted(processInstance.getId(), ksession);
     }
-    
+
     @Test
     public void testEscalationBoundaryEventAndIntermediate() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("escalation/BPMN2-EscalationWithDataMapping.bpmn2");

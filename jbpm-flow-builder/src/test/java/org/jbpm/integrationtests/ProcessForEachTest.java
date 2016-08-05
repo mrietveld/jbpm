@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,26 @@ import java.util.Map;
 import org.jbpm.process.instance.ProcessInstance;
 import org.jbpm.test.util.AbstractBaseTest;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
-import org.kie.internal.runtime.StatefulKnowledgeSession;
 
+@RunWith(Parameterized.class)
 public class ProcessForEachTest extends AbstractBaseTest {
-  
+
+    @Parameters(name="{0}")
+    public static Collection<Object[]> parameters() {
+        return getStacklessTestOptions();
+    };
+
+    public ProcessForEachTest(String execModel) {
+        super(execModel);
+    }
+
     @Test
     public void testForEach() {
         Reader source = new StringReader(
@@ -79,9 +93,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
             "  </connections>\n" +
             "</process>");
         builder.addRuleFlow(source);
-        
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         List<String> myList = new ArrayList<String>();
         workingMemory.setGlobal("myList", myList);
         List<String> collection = new ArrayList<String>();
@@ -95,7 +109,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
         assertEquals(ProcessInstance.STATE_COMPLETED, processInstance.getState());
         assertEquals(3, myList.size());
     }
-    
+
+    // OCRAM: Performance for stackless REALLY SUCKS HERE! 50 secs vs. 1.5secss!!
+
     @Test
     public void testForEachLargeList() {
         Reader source = new StringReader(
@@ -143,9 +159,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
             "  </connections>\n" +
             "</process>");
         builder.addRuleFlow(source);
-        
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         final List<String> myList = new ArrayList<String>();
         workingMemory.getWorkItemManager().registerWorkItemHandler("Log", new WorkItemHandler() {
 			public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
@@ -167,7 +183,7 @@ public class ProcessForEachTest extends AbstractBaseTest {
         assertEquals(ProcessInstance.STATE_COMPLETED, processInstance.getState());
         assertEquals(10000, myList.size());
     }
-    
+
     @Test
     public void testForEachEmptyList() {
         Reader source = new StringReader(
@@ -213,9 +229,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
             "  </connections>\n" +
             "</process>");
         builder.addRuleFlow(source);
-        
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         List<String> myList = new ArrayList<String>();
         workingMemory.setGlobal("myList", myList);
         List<String> collection = new ArrayList<String>();
@@ -225,7 +241,7 @@ public class ProcessForEachTest extends AbstractBaseTest {
             workingMemory.startProcess("org.drools.ForEach", params);
         assertEquals(ProcessInstance.STATE_COMPLETED, processInstance.getState());
     }
-    
+
     @Test
     public void testForEachNullList() {
         Reader source = new StringReader(
@@ -271,16 +287,16 @@ public class ProcessForEachTest extends AbstractBaseTest {
             "  </connections>\n" +
             "</process>");
         builder.addRuleFlow(source);
-        
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         List<String> myList = new ArrayList<String>();
         workingMemory.setGlobal("myList", myList);
         ProcessInstance processInstance = ( ProcessInstance )
             workingMemory.startProcess("org.drools.ForEach");
         assertEquals(ProcessInstance.STATE_COMPLETED, processInstance.getState());
     }
-    
+
     @Test
     public void testForEachCancel() {
         Reader source = new StringReader(
@@ -352,9 +368,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
 			"\n" +
 			"</process>");
 		builder.addRuleFlow(source);
-		
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         List<String> collection = new ArrayList<String>();
         collection.add("one");
         collection.add("two");
@@ -368,7 +384,7 @@ public class ProcessForEachTest extends AbstractBaseTest {
         processInstance.setState(ProcessInstance.STATE_ABORTED);
         assertEquals(0, workingMemory.getProcessInstances().size());
     }
-    
+
     @Test
     public void testForEachCancelIndependent() {
         Reader source = new StringReader(
@@ -440,9 +456,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
 			"\n" +
 			"</process>");
 		builder.addRuleFlow(source);
-        
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         List<String> collection = new ArrayList<String>();
         collection.add("one");
         collection.add("two");
@@ -456,7 +472,7 @@ public class ProcessForEachTest extends AbstractBaseTest {
         processInstance.setState(ProcessInstance.STATE_ABORTED);
         assertEquals(3, workingMemory.getProcessInstances().size());
     }
-    
+
     @Test
     public void testForEachWithEventNode() {
         Reader source = new StringReader(
@@ -514,9 +530,9 @@ public class ProcessForEachTest extends AbstractBaseTest {
             "  </connections>\n" +
             "</process>");
         builder.addRuleFlow(source);
-        
-        StatefulKnowledgeSession workingMemory = createKieSession(builder.getPackage());
-        
+
+        KieSession workingMemory = createKieSession(builder.getPackage());
+
         List<String> myList = new ArrayList<String>();
         workingMemory.setGlobal("myList", myList);
         List<String> collection = new ArrayList<String>();
@@ -532,5 +548,5 @@ public class ProcessForEachTest extends AbstractBaseTest {
         assertEquals(ProcessInstance.STATE_COMPLETED, processInstance.getState());
         assertEquals(3, myList.size());
     }
-    
+
 }

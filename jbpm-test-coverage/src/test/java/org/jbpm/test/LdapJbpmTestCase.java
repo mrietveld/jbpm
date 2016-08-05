@@ -28,7 +28,7 @@ import org.jbpm.services.task.identity.LDAPUserGroupCallbackImpl;
 import org.junit.After;
 import org.junit.Before;
 
-public abstract class LdapJbpmTestCase extends JbpmTestCase {
+public abstract class LdapJbpmTestCase extends JbpmTestCoverageTestCase {
 
     private static InMemoryDirectoryServer server;
 

@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItemManager;
+import org.kie.test.util.test.Broken;
 
 //
 // BZ-1121396
@@ -73,6 +74,7 @@ public class AsyncTaskCallbackTest extends JbpmAsyncJobTestCase {
     }
 
     @Test(timeout=30000)
+    @Broken
     public void testTaskCallback() throws Exception {
         CountDownProcessEventListener countDownListener = new CountDownProcessEventListener("Continue", 1);
         addProcessEventListener(countDownListener);
@@ -85,9 +87,9 @@ public class AsyncTaskCallbackTest extends JbpmAsyncJobTestCase {
         ProcessInstance pi = ksession.startProcess(ASYNC_EXECUTOR_CALLBACK_ID, pm);
 
         // Wait for the job to be picked up and processed. The job will send
-        // the 'Continue' signal on OK or Fail. We expect OK. 
+        // the 'Continue' signal on OK or Fail. We expect OK.
         countDownListener.waitTillCompleted();
-        
+
         ProcessInstance processInstance = ksession.getProcessInstance(pi.getId());
         assertNull(processInstance);
 

@@ -15,6 +15,15 @@ limitations under the License.*/
 
 package org.jbpm.bpmn2;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.InitialContext;
+import javax.transaction.UserTransaction;
+
 import org.drools.core.command.impl.CommandBasedStatefulKnowledgeSession;
 import org.drools.core.command.impl.GenericCommand;
 import org.drools.core.command.impl.KnowledgeCommandContext;
@@ -25,7 +34,7 @@ import org.jbpm.bpmn2.objects.Address;
 import org.jbpm.bpmn2.objects.HelloService;
 import org.jbpm.bpmn2.objects.Person;
 import org.jbpm.bpmn2.objects.TestWorkItemHandler;
-import org.jbpm.bpmn2.test.RequirePersistence;
+import org.jbpm.bpmn2.test.RequiresPersistence;
 import org.jbpm.process.audit.AuditLogService;
 import org.jbpm.process.audit.JPAAuditLogService;
 import org.jbpm.process.audit.NodeInstanceLog;
@@ -68,6 +77,8 @@ import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.internal.command.Context;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
+import org.kie.test.util.test.Broken;
+import org.kie.test.util.test.Fixed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,10 +94,9 @@ import java.util.Map;
 @RunWith(Parameterized.class)
 public class ActivityTest extends JbpmBpmn2TestCase {
 
-    @Parameters
+    @Parameters(name="{3}")
     public static Collection<Object[]> persistence() {
-        Object[][] data = new Object[][] { { false }, { true } };
-        return Arrays.asList(data);
+        return getTestOptions(TestOption.EXCEPT_FOR_LOCKING);
     };
 
     private static final Logger logger = LoggerFactory.getLogger(ActivityTest.class);
@@ -94,8 +104,8 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     private KieSession ksession;
     private KieSession ksession2;
 
-    public ActivityTest(boolean persistence) throws Exception {
-        super(persistence);
+    public ActivityTest(boolean persistence, boolean locking, boolean stackless, String name) throws Exception {
+        super(persistence, locking, stackless, name);
     }
 
     @BeforeClass
@@ -248,7 +258,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence
+    @RequiresPersistence
     public void testScriptTaskWithHistoryLog() throws Exception {
         KieBase kbase = createKnowledgeBase("BPMN2-ScriptTask.bpmn2");
         ksession = createKnowledgeSession(kbase);
@@ -310,7 +320,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence(true)
+    @RequiresPersistence(true)
     public void testRuleTaskSetVariable() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("BPMN2-RuleTask2.bpmn2",
                 "BPMN2-RuleTaskSetVariable.drl");
@@ -357,7 +367,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence(false)
+    @RequiresPersistence(false)
     public void testRuleTaskWithFacts() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("BPMN2-RuleTaskWithFact.bpmn2",
                 "BPMN2-RuleTask3.drl");
@@ -426,7 +436,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence
+    @RequiresPersistence
     public void testRuleTaskWithFactsWithPersistence() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("BPMN2-RuleTaskWithFact.bpmn2",
                 "BPMN2-RuleTask3.drl");
@@ -554,7 +564,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test(timeout=10000)
-    @RequirePersistence
+    @RequiresPersistence
     public void testProcesWithHumanTaskWithTimer() throws Exception {
         CountDownProcessEventListener countDownListener = new CountDownProcessEventListener("Timer", 1);
         KieBase kbase = createKnowledgeBase("BPMN2-SubProcessWithTimer.bpmn2");
@@ -663,7 +673,8 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    public void testCallActivityMI() throws Exception {
+    @Fixed
+    public void testCallActivityMultiInstance() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("BPMN2-CallActivityMI.bpmn2",
                 "BPMN2-CallActivitySubProcess.bpmn2");
         ksession = createKnowledgeSession(kbase);
@@ -742,7 +753,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence
+    @RequiresPersistence
     public void testCallActivityWithHistoryLog() throws Exception {
         KieBase kbase = createKnowledgeBase("BPMN2-CallActivity.bpmn2",
                 "BPMN2-CallActivitySubProcess.bpmn2");
@@ -764,7 +775,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test(timeout=10000)
-    @RequirePersistence
+    @RequiresPersistence
     public void testCallActivityWithTimer() throws Exception {
         CountDownProcessEventListener countDownListener = new CountDownProcessEventListener("Timer", 1);
         KieBase kbase = createKnowledgeBase("BPMN2-ParentProcess.bpmn2",
@@ -960,6 +971,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
+    @Fixed
     public void testAdHocSubProcessAutoCompleteDynamicTask() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper(
                 "BPMN2-AdHocSubProcessAutoComplete.bpmn2",
@@ -998,6 +1010,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
+    @Broken // persistence
     public void testAdHocSubProcessAutoCompleteDynamicSubProcess()
             throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper(
@@ -1031,6 +1044,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
+    @Fixed
     public void testAdHocSubProcessAutoCompleteDynamicSubProcess2()
             throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper(
@@ -1064,6 +1078,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
+    @Fixed
     public void testAdHocProcess() throws Exception {
         KieBase kbase = createKnowledgeBase("BPMN2-AdHocProcess.bpmn2");
         ksession = createKnowledgeSession(kbase);
@@ -1083,6 +1098,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
+    @Fixed
     public void testAdHocProcessDynamicTask() throws Exception {
         KieBase kbase = createKnowledgeBase("BPMN2-AdHocProcess.bpmn2");
         ksession = createKnowledgeSession(kbase);
@@ -1111,6 +1127,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
+    @Broken
     public void testAdHocProcessDynamicSubProcess() throws Exception {
         KieBase kbase = createKnowledgeBase("BPMN2-AdHocProcess.bpmn2",
                 "BPMN2-MinimalProcess.bpmn2");
@@ -1277,7 +1294,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence(false)
+    @RequiresPersistence(false)
     public void testBusinessRuleTask() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("BPMN2-BusinessRuleTask.bpmn2",
                 "BPMN2-BusinessRuleTask.drl");
@@ -1292,7 +1309,7 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @RequirePersistence(true)
+    @RequiresPersistence(true)
     public void testBusinessRuleTaskWithPersistence() throws Exception {
         KieBase kbase = createKnowledgeBaseWithoutDumper("BPMN2-BusinessRuleTask.bpmn2",
                 "BPMN2-BusinessRuleTask.drl");
@@ -1382,8 +1399,9 @@ public class ActivityTest extends JbpmBpmn2TestCase {
         assertTrue(list.size() == 1);
     }
 
-    @RequirePersistence
+    @RequiresPersistence
     @Test(timeout=10000)
+    @Broken
     public void testNullVariableInScriptTaskProcess() throws Exception {
         CountDownProcessEventListener countDownListener = new CountDownProcessEventListener("Timer", 1, true);
         KieBase kbase = createKnowledgeBase("BPMN2-NullVariableInScriptTaskProcess.bpmn2");
@@ -1418,6 +1436,9 @@ public class ActivityTest extends JbpmBpmn2TestCase {
     @Test
     public void testCallActivityWithBoundaryEvent() throws Exception {
         CountDownProcessEventListener countDownListener = new CountDownProcessEventListener("Boundary event", 1);
+        if( queueBasedExecution ) {
+            countDownListener.useAfterProcessCompleted();
+        }
         KieBase kbase = createKnowledgeBase(
                 "BPMN2-CallActivityWithBoundaryEvent.bpmn2",
                 "BPMN2-CallActivitySubProcessWithBoundaryEvent.bpmn2");
@@ -1535,11 +1556,11 @@ public class ActivityTest extends JbpmBpmn2TestCase {
         ProcessInstance processInstance = ksession.startProcess("ParentProcess");
 
         WorkItem workItem = workItemHandler.getWorkItem();
-        assertNotNull(workItem);
+        assertNotNull("Null work item!", workItem);
         ksession.getWorkItemManager().completeWorkItem(workItem.getId(), null);
 
         workItem = workItemHandler.getWorkItem();
-        assertNotNull(workItem);
+        assertNotNull("Null work item!", workItem);
         ksession.getWorkItemManager().completeWorkItem(workItem.getId(), null);
 
         assertProcessInstanceFinished(processInstance, ksession);

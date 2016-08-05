@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.assertj.core.api.Assertions;
-import org.jbpm.test.JbpmTestCase;
+import org.jbpm.test.JbpmTestCoverageTestCase;
 import org.jbpm.workflow.instance.node.HumanTaskNodeInstance;
 import org.junit.Test;
 import org.kie.api.event.process.DefaultProcessEventListener;
@@ -34,10 +34,11 @@ import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
+import org.kie.test.util.test.Broken;
 
 import qa.tools.ikeeper.annotation.BZ;
 
-public class HumanTaskSwimlaneTest extends JbpmTestCase {
+public class HumanTaskSwimlaneTest extends JbpmTestCoverageTestCase {
 
     private static final String SWIMLANE_SAME_GROUPS =
             "org/jbpm/test/regression/task/HumanTaskSwimlane-sameGroups.bpmn2";
@@ -48,7 +49,7 @@ public class HumanTaskSwimlaneTest extends JbpmTestCase {
             "org/jbpm/test/regression/task/HumanTaskSwimlane-differentGroups.bpmn2";
     private static final String SWIMLANE_DIFFERENT_GROUPS_ID =
             "org.jbpm.test.regression.task.HumanTaskSwimlane-differentGroups";
-    
+
     private static final String SWIMLANE_MULTIPLE_ACTORS =
             "org/jbpm/test/regression/task/HumanTaskSwimlane-multipleActors.bpmn2";
     private static final String SWIMLANE_MULTIPLE_ACTORS_ID =
@@ -106,16 +107,17 @@ public class HumanTaskSwimlaneTest extends JbpmTestCase {
         }
         return null;
     }
-    
+
     @Test
+    @Broken
     public void testSwimlaneWithMultipleActorsAssigned() {
         createRuntimeManager(SWIMLANE_MULTIPLE_ACTORS);
-        
+
         String user = "john";
         RuntimeEngine runtime = getRuntimeEngine();
         KieSession kSession = runtime.getKieSession();
         TaskService taskservice = runtime.getTaskService();
-        
+
         kSession.addEventListener(new DefaultProcessEventListener(){
 
             @Override
@@ -125,36 +127,36 @@ public class HumanTaskSwimlaneTest extends JbpmTestCase {
                     assertNull(swimlaneActorId);
                 }
             }
-            
+
         });
 
         Map<String, Object> map = new HashMap<String, Object>();
-        
+
         ProcessInstance instance = kSession.startProcess(SWIMLANE_MULTIPLE_ACTORS_ID, map);
-        
+
         List<Status> statuses = new ArrayList<Status>();
         statuses.add(Status.Ready);
         statuses.add(Status.Reserved);
         statuses.add(Status.InProgress);
 
-        List<TaskSummary> tasks = taskservice.getTasksByStatusByProcessInstanceId(instance.getId(), statuses, "en_US");        
+        List<TaskSummary> tasks = taskservice.getTasksByStatusByProcessInstanceId(instance.getId(), statuses, "en_US");
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
-        
+
         TaskSummary task = tasks.get(0);
         assertEquals(Status.Ready, task.getStatus());
-        
-        
+
+
         taskservice.claim(task.getId(), user);
         taskservice.start(task.getId(), user);
-        
-        tasks = taskservice.getTasksByStatusByProcessInstanceId(instance.getId(), statuses, "en_US");        
+
+        tasks = taskservice.getTasksByStatusByProcessInstanceId(instance.getId(), statuses, "en_US");
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
-        
+
         task = tasks.get(0);
         assertEquals(Status.InProgress, task.getStatus());
-                
+
         taskservice.complete(task.getId(), user, map);
         assertProcessInstanceCompleted(instance.getId());
     }

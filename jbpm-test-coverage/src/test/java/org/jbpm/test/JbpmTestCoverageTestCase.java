@@ -16,15 +16,18 @@
 
 package org.jbpm.test;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Properties;
 
 import org.assertj.core.api.Assertions;
 import org.jbpm.persistence.util.PersistenceUtil;
 import org.junit.Rule;
+import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.kie.api.KieServices;
 import org.kie.api.command.KieCommands;
 import org.kie.api.io.ResourceType;
@@ -37,25 +40,25 @@ import qa.tools.ikeeper.client.JiraClient;
 import qa.tools.ikeeper.test.IKeeperJUnitConnector;
 import bitronix.tm.resource.jdbc.PoolingDataSource;
 
-public abstract class JbpmTestCase extends JbpmJUnitBaseTestCase {
+public abstract class JbpmTestCoverageTestCase extends JbpmJUnitBaseTestCase {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     protected static final String EMPTY_CASE = "EmptyCase.bpmn2";
-    
-    public JbpmTestCase() {
+
+    public JbpmTestCoverageTestCase() {
         this(true);
     }
 
-    public JbpmTestCase(boolean persistence) {
+    public JbpmTestCoverageTestCase(boolean persistence) {
         this(persistence, persistence);
     }
 
-    public JbpmTestCase(boolean setupDataSource, boolean sessionPersistence) {
+    public JbpmTestCoverageTestCase(boolean setupDataSource, boolean sessionPersistence) {
         this(setupDataSource, sessionPersistence, "org.jbpm.test.persistence");
     }
 
-    public JbpmTestCase(boolean setupDataSource, boolean sessionPersistence, String persistenceUnit) {
+    public JbpmTestCoverageTestCase(boolean setupDataSource, boolean sessionPersistence, String persistenceUnit) {
         super(setupDataSource, sessionPersistence, persistenceUnit);
     }
 
@@ -81,8 +84,8 @@ public abstract class JbpmTestCase extends JbpmJUnitBaseTestCase {
     );
 
     @Override
-    protected PoolingDataSource setupPoolingDataSource() {        
-        
+    protected PoolingDataSource setupPoolingDataSource() {
+
         Properties dsProps = PersistenceUtil.getDatasourceProperties();
         String jdbcUrl = dsProps.getProperty("url");
         String driverClass = dsProps.getProperty("driverClassName");

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.assertj.core.api.Assertions;
-import org.jbpm.test.JbpmTestCase;
+import org.jbpm.test.JbpmTestCoverageTestCase;
 import org.jbpm.test.listener.IterableProcessEventListener;
 import org.jbpm.test.listener.TrackingProcessEventListener;
 import org.junit.Test;
@@ -29,7 +29,7 @@ import org.kie.api.runtime.KieSession;
 
 import static org.jbpm.test.tools.IterableListenerAssert.*;
 
-public class StartEventTest extends JbpmTestCase {
+public class StartEventTest extends JbpmTestCoverageTestCase {
 
     private static final String CONDITIONAL = "org/jbpm/test/functional/event/StartEvent-conditional.bpmn2";
     private static final String CONDITIONAL_ID = "org.jbpm.test.functional.event.StartEvent-conditional";

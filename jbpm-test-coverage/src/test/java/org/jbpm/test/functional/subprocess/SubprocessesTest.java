@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.assertj.core.api.Assertions;
-import org.jbpm.test.JbpmTestCase;
+import org.jbpm.test.JbpmTestCoverageTestCase;
 import org.jbpm.test.listener.IterableProcessEventListener;
 import org.jbpm.test.listener.IterableProcessEventListener.CachedProcessStartedEvent;
 import org.jbpm.test.listener.TrackingProcessEventListener;
@@ -30,10 +30,11 @@ import org.junit.Test;
 import org.kie.api.command.Command;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.test.util.test.Broken;
 
 import static org.jbpm.test.tools.IterableListenerAssert.*;
 
-public class SubprocessesTest extends JbpmTestCase {
+public class SubprocessesTest extends JbpmTestCoverageTestCase {
 
     private static final String P2_START = "Start";
     private static final String P2_GATEWAY_START = "Gateway";
@@ -90,6 +91,7 @@ public class SubprocessesTest extends JbpmTestCase {
     }
 
     @Test(timeout = 30000)
+    @Broken
     public void testMissingProcess() {
         try {
             runProcess(ksession, "missing");

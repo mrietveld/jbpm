@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jbpm.services.task.events.DefaultTaskEventListener;
-import org.jbpm.test.JbpmTestCase;
+import org.jbpm.test.JbpmTestCoverageTestCase;
 import org.junit.Test;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.manager.RuntimeEngine;
@@ -32,7 +32,7 @@ import org.kie.api.task.model.TaskSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HumanTaskVariablesAccessTest extends JbpmTestCase {
+public class HumanTaskVariablesAccessTest extends JbpmTestCoverageTestCase {
 
     private static final Logger logger = LoggerFactory.getLogger(HumanTaskVariablesAccessTest.class);
 

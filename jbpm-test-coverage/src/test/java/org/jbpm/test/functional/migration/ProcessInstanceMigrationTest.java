@@ -27,7 +27,7 @@ import javax.persistence.Query;
 import org.drools.core.command.impl.GenericCommand;
 import org.drools.core.command.impl.KnowledgeCommandContext;
 import org.jbpm.persistence.processinstance.ProcessInstanceInfo;
-import org.jbpm.test.JbpmTestCase;
+import org.jbpm.test.JbpmTestCoverageTestCase;
 import org.jbpm.workflow.instance.WorkflowProcessInstance;
 import org.jbpm.workflow.instance.WorkflowProcessInstanceUpgrader;
 import org.jbpm.workflow.instance.node.WorkItemNodeInstance;
@@ -48,7 +48,7 @@ import org.kie.api.task.model.TaskSummary;
 import bitronix.tm.BitronixTransactionManager;
 import bitronix.tm.TransactionManagerServices;
 
-public class ProcessInstanceMigrationTest extends JbpmTestCase {
+public class ProcessInstanceMigrationTest extends JbpmTestCoverageTestCase {
 
     public ProcessInstanceMigrationTest() {
         super(true, true);
