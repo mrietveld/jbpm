@@ -448,6 +448,7 @@ public abstract class AbstractProcessInstanceMarshaller implements
 			}
 		}
         processInstance.internalSetNodeInstanceCounter(nodeInstanceCounter);
+        processInstance.setQueueBased(stream.readBoolean());
         if (wm != null) {
             processInstance.reconnect();
         }
